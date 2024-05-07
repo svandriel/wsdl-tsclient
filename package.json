@@ -20,8 +20,8 @@
     "dev": "ts-node -T ./dev.ts",
     "dist": "tsc",
     "build": "tsc",
-    "lint": "eslint ./src",
-    "lint:fix": "eslint --fix ./src"
+    "lint": "prettier --check \"**/*.{ts,json,yaml,yml}\" && eslint ./src",
+    "lint:fix": "prettier --write \"**/*.{ts,json,yaml,yml}\" && eslint --fix ./src"
   },
   "repository": {
     "type": "git",
@@ -47,8 +47,8 @@
     "@typescript-eslint/eslint-plugin": "^5.19.0",
     "@typescript-eslint/parser": "^5.19.0",
     "eslint": "^8.13.0",
-    "eslint-plugin-prettier": "^4.0.0",
-    "prettier": "^2.6.2",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.2.5",
     "tap-spec": "^5.0.0",
     "tape": "^5.5.3",
     "ts-node": "^10.7.0",
