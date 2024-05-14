@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+    xmlns:tns="http://example.com/your/service"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+    targetNamespace="http://example.com/your/service">
+
+    <!-- Types -->
+    <wsdl:types>
+        <xsd:schema targetNamespace="http://example.com/your/service">
+            <xsd:element name="Request">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="name" type="xsd:string" />
+                        <xsd:element name="personType" type="tns:PersonType" />
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <xsd:simpleType name="PersonType">
+                <xsd:restriction base="xsd:string">
+                    <xsd:enumeration value="Minor" />
+                    <xsd:enumeration value="Adult" />
+                    <xsd:enumeration value="Unknown" />
+                </xsd:restriction>
+            </xsd:simpleType>
+
+            <xsd:element name="Response">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="message" type="xsd:string" />
+                        <xsd:element name="status" type="tns:StatusEnum" />
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <xsd:simpleType name="StatusEnum">
+                <xsd:restriction base="xsd:string">
+                    <xsd:enumeration value="Success" />
+                    <xsd:enumeration value="Failure" />
+                </xsd:restriction>
+            </xsd:simpleType>
+        </xsd:schema>
+    </wsdl:types>
+
+    <!-- Messages -->
+    <wsdl:message name="RequestMessage">
+        <wsdl:part name="parameters" element="tns:Request" />
+    </wsdl:message>
+
+    <wsdl:message name="ResponseMessage">
+        <wsdl:part name="parameters" element="tns:Response" />
+    </wsdl:message>
+
+    <!-- PortType -->
+    <wsdl:portType name="EnumServicePortType">
+        <wsdl:operation name="SomeOperation">
+            <wsdl:input message="tns:RequestMessage" />
+            <wsdl:output message="tns:ResponseMessage" />
+        </wsdl:operation>
+    </wsdl:portType>
+
+    <!-- Binding -->
+    <wsdl:binding name="EnumServiceBinding" type="tns:EnumServicePortType">
+        <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http" />
+        <wsdl:operation name="SomeOperation">
+            <soap:operation soapAction="http://example.com/your/service/SomeOperation" />
+            <wsdl:input>
+                <soap:body use="literal" />
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal" />
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+
+    <!-- Service -->
+    <wsdl:service name="EnumService">
+        <wsdl:port name="EnumServicePort" binding="tns:EnumServiceBinding">
+            <soap:address location="http://example.com/your/service" />
+        </wsdl:port>
+    </wsdl:service>
+
+</wsdl:definitions>
