@@ -9,6 +9,8 @@ export type DefinitionProperty =
           kind: "PRIMITIVE";
           isArray?: boolean;
           type: string;
+          /** When type is 'string', the values may be restricted to an enum */
+          enumValues?: string[];
       }
     | {
           name: string;

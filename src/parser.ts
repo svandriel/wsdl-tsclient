@@ -6,6 +6,8 @@ import { changeCase } from "./utils/change-case";
 import { stripExtension } from "./utils/file";
 import { reservedKeywords } from "./utils/javascript";
 import { Logger } from "./utils/logger";
+import { inspect } from "util";
+import chalk from "chalk";
 
 interface ParserOptions {
     modelNamePreffix: string;
@@ -43,6 +45,7 @@ const NODE_SOAP_PARSED_TYPES: { [type: string]: string } = {
     boolean: "boolean",
     dateTime: "Date",
     date: "Date",
+    string: "string",
 };
 
 function toPrimitiveType(type: string): string {
@@ -50,7 +53,32 @@ function toPrimitiveType(type: string): string {
     if (index >= 0) {
         type = type.substring(index + 1);
     }
-    return NODE_SOAP_PARSED_TYPES[type] || "string";
+    // >> Unknown type <<: string|Minor,Adult,Unknown
+    // See if the type is an enum type, second part includes comma
+    const parts = type.split("|");
+    const mappedType = NODE_SOAP_PARSED_TYPES[type] || "string";
+    const enum = parts.length > 1 && parts[1].split(",");
+    if (type.includes("|")) {
+        const unionTypes = type.split("|");
+        if (unionTypes.length === 2 && unionTypes.includes("string")) {
+            return "string";
+        } else if (unionTypes.length === 2 && unionTypes.includes("number")) {
+            return "number";
+        } else if (unionTypes.length === 2 && unionTypes.includes("boolean")) {
+            return "boolean";
+        } else {
+            return "any";
+        }
+    }
+
+    console.log("toPrimitiveType", type);
+    const converted = NODE_SOAP_PARSED_TYPES[type];
+    if (converted) {
+        return converted;
+    } else {
+        console.log(`${chalk.red.inverse(">> Unknown type <<")}: ${type}`); // TODO: Add warning
+        return "string";
+    }
 }
 
 /**
@@ -72,6 +100,7 @@ function parseDefinition(
     const defName = changeCase(name, { pascalCase: true });
 
     Logger.debug(`Parsing Definition ${stack.join(".")}.${name}`);
+    console.log(`Parsing definition ${chalk.yellowBright(name)} with parts`, defParts);
 
     let nonCollisionDefName: string;
     try {
@@ -104,6 +133,9 @@ function parseDefinition(
             });
         } else {
             Object.entries(defParts).forEach(([propName, type]) => {
+                console.log(
+                    `Parsing property '${chalk.cyan(propName)}', of type: ${inspect(type, { depth: 10, colors: true })}`
+                );
                 if (propName === "targetNSAlias") {
                     definition.docs.push(`@targetNSAlias \`${type}\``);
                 } else if (propName === "targetNamespace") {
@@ -159,7 +191,6 @@ function parseDefinition(
                                     name: stripedPropName,
                                     sourceName: propName,
                                     ref: subDefinition,
-                                    isArray: true,
                                 });
                             } catch (err) {
                                 const e = new Error(
@@ -170,6 +201,14 @@ function parseDefinition(
                         }
                     }
                 } else if (typeof type === "string") {
+                    console.log(
+                        `${chalk.red.inverse("STRING PROP")}: ${propName} of type ${chalk.bgYellowBright.inverse(
+                            inspect(type, {
+                                depth: 10,
+                                colors: false,
+                            })
+                        )}`
+                    );
                     // primitive type
                     definition.properties.push({
                         kind: "PRIMITIVE",
@@ -257,6 +296,9 @@ export async function parseWsdl(wsdlPath: string, options: Partial<ParserOptions
                 if (wsdl === undefined) {
                     return reject(new Error("WSDL is undefined"));
                 }
+
+                // console.log(inspect(wsdl, { depth: null, colors: false }));
+                // console.log(JSON.stringify(wsdl, null, 2));
 
                 const parsedWsdl = new ParsedWsdl({
                     maxStack: options.maxRecursiveDefinitionName,
@@ -395,6 +437,8 @@ export async function parseWsdl(wsdlPath: string, options: Partial<ParserOptions
 
                 parsedWsdl.services = services;
                 parsedWsdl.ports = allPorts;
+
+                // console.log(inspect(parsedWsdl, { depth: 10, colors: true }));
 
                 return resolve(parsedWsdl);
             }
